@@ -35,6 +35,19 @@
         <p id="prompt-text" class="prompt-text">Tap "Draw New Cue" to begin.</p>
       </section>
 
+      <section class="card map-card">
+        <div class="map-head">
+          <p class="label">Ghost Map (Optional)</p>
+          <button id="map-toggle-btn" class="ghost-btn map-toggle-btn">Hide Map</button>
+        </div>
+        <div id="map-wrap" class="map-wrap">
+          <svg id="drift-map" viewBox="0 0 100 100" aria-label="Abstract drift map"></svg>
+          <p class="map-note">
+            You = circle. Home = square. Cue target = star. Keep following cues first.
+          </p>
+        </div>
+      </section>
+
       <section class="card controls-card">
         <label class="switch-row" for="safety-toggle">
           <span>

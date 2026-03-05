@@ -2,8 +2,10 @@ const state = {
   running: false,
   safetyOn: true,
   pingOn: true,
+  mapVisible: true,
   position: null,
   home: null,
+  currentCue: null,
 };
 
 const mockPlaces = [
@@ -17,14 +19,14 @@ const mockPlaces = [
 ];
 
 const directionBuckets = [
-  "lean north",
-  "drift northeast",
-  "slide east",
-  "drift southeast",
-  "lean south",
-  "drift southwest",
-  "slide west",
-  "drift northwest",
+  { label: "lean north", bearing: 0 },
+  { label: "drift northeast", bearing: 45 },
+  { label: "slide east", bearing: 90 },
+  { label: "drift southeast", bearing: 135 },
+  { label: "lean south", bearing: 180 },
+  { label: "drift southwest", bearing: 225 },
+  { label: "slide west", bearing: 270 },
+  { label: "drift northwest", bearing: 315 },
 ];
 
 const promptTemplates = {
@@ -48,13 +50,19 @@ const promptTemplates = {
     "Pick a weird sign and walk toward it.",
     "Follow the most textured building facade.",
   ],
-  concrete: [
-    "Take the quieter side street, then reassess.",
-  ],
-  industrial: [
-    "Keep moving until storefront lights return.",
-  ],
+  concrete: ["Take the quieter side street, then reassess."],
+  industrial: ["Keep moving until storefront lights return."],
 };
+
+const mapLines = [
+  "8,18 22,25 35,19 49,24 62,16 80,22 93,15",
+  "7,39 20,33 33,40 47,34 65,41 78,35 92,42",
+  "10,62 23,56 39,65 52,58 67,67 82,61 93,68",
+  "9,83 23,76 37,84 53,77 69,85 83,79 95,86",
+  "18,8 24,21 20,37 27,52 21,71 28,91",
+  "46,7 52,20 46,38 54,54 49,72 55,92",
+  "74,9 80,23 73,40 82,57 76,73 83,92",
+];
 
 const els = {
   directionText: document.getElementById("direction-text"),
@@ -66,10 +74,17 @@ const els = {
   newPromptBtn: document.getElementById("new-prompt-btn"),
   safetyToggle: document.getElementById("safety-toggle"),
   serendipityToggle: document.getElementById("serendipity-toggle"),
+  mapSvg: document.getElementById("drift-map"),
+  mapWrap: document.getElementById("map-wrap"),
+  mapToggleBtn: document.getElementById("map-toggle-btn"),
 };
 
 function rand(list) {
   return list[Math.floor(Math.random() * list.length)];
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function addFeed(message, type = "info") {
@@ -88,13 +103,12 @@ function addFeed(message, type = "info") {
 
 function filteredPlaces() {
   if (!state.safetyOn) return mockPlaces;
-  return mockPlaces.filter((p) => p.safety >= 0.72);
+  return mockPlaces.filter((place) => place.safety >= 0.72);
 }
 
 function buildPrompt(place) {
   const templatePool = promptTemplates[place.kind] || ["Keep wandering toward what feels alive."];
-  const cue = rand(templatePool);
-  return `${cue} If it feels flat after 5 minutes, pivot.`;
+  return `${rand(templatePool)} If it feels flat after 5 minutes, pivot.`;
 }
 
 function nextDirection() {
@@ -116,12 +130,85 @@ function approxDistanceText() {
   return "You are far enough for surprise. Use Return Home anytime.";
 }
 
-function updateCue() {
-  const places = filteredPlaces();
-  const place = rand(places);
-  const direction = nextDirection();
+function latLngToHomePoint() {
+  if (!state.position || !state.home) return { x: 50, y: 52 };
 
-  els.directionText.textContent = direction;
+  const lat = state.position.coords.latitude;
+  const latMetersFromHome = (lat - state.home.latitude) * 111111;
+  const lngMetersFromHome =
+    (state.position.coords.longitude - state.home.longitude) * 111111 * Math.cos((lat * Math.PI) / 180);
+
+  const x = clamp(50 - lngMetersFromHome / 20, 10, 90);
+  const y = clamp(52 + latMetersFromHome / 20, 10, 90);
+  return { x, y };
+}
+
+function cueTargetPoint() {
+  if (!state.currentCue) return { x: 60, y: 42 };
+
+  const radians = (state.currentCue.bearing * Math.PI) / 180;
+  const units = clamp(state.currentCue.targetMeters / 16, 12, 28);
+  return {
+    x: clamp(50 + units * Math.sin(radians), 8, 92),
+    y: clamp(52 - units * Math.cos(radians), 8, 92),
+  };
+}
+
+function placeDots() {
+  const list = filteredPlaces().slice(0, 4);
+  return list
+    .map((place, index) => {
+      const angle = ((index + 1) * 72 * Math.PI) / 180;
+      const radius = 16 + index * 3;
+      const x = 50 + radius * Math.cos(angle);
+      const y = 52 + radius * Math.sin(angle);
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.4" fill="#7f6a3d" opacity="0.85"><title>${place.name}</title></circle>`;
+    })
+    .join("");
+}
+
+function renderMap() {
+  const user = { x: 50, y: 52 };
+  const home = latLngToHomePoint();
+  const target = cueTargetPoint();
+  const targetName = state.currentCue ? state.currentCue.place.name : "cue target";
+
+  const star = `${target.x},${target.y - 2.8} ${target.x + 1.2},${target.y - 0.8} ${target.x + 3.3},${target.y - 0.8} ${target.x + 1.6},${target.y + 0.6} ${target.x + 2.2},${target.y + 2.8} ${target.x},${target.y + 1.5} ${target.x - 2.2},${target.y + 2.8} ${target.x - 1.6},${target.y + 0.6} ${target.x - 3.3},${target.y - 0.8} ${target.x - 1.2},${target.y - 0.8}`;
+
+  const paths = mapLines
+    .map((line) => `<polyline points="${line}" fill="none" stroke="#7a6640" stroke-width="0.65" opacity="0.7"/>`)
+    .join("");
+
+  els.mapSvg.innerHTML = `
+    <rect x="1" y="1" width="98" height="98" rx="2" fill="none" stroke="#8f7445" stroke-width="0.8"/>
+    ${paths}
+    <line x1="${user.x}" y1="${user.y}" x2="${target.x}" y2="${target.y}" stroke="#3f653f" stroke-dasharray="2 2" stroke-width="1.2" opacity="0.85"/>
+    ${placeDots()}
+    <rect x="${home.x - 1.6}" y="${home.y - 1.6}" width="3.2" height="3.2" fill="#7f3f2b">
+      <title>Home anchor</title>
+    </rect>
+    <circle cx="${user.x}" cy="${user.y}" r="2.2" fill="#2d2618">
+      <title>You are here</title>
+    </circle>
+    <polygon points="${star}" fill="#3f653f">
+      <title>${targetName}</title>
+    </polygon>
+  `;
+}
+
+function updateCue() {
+  const place = rand(filteredPlaces());
+  const direction = nextDirection();
+  const targetMeters = 180 + Math.floor(Math.random() * 380);
+
+  state.currentCue = {
+    place,
+    direction: direction.label,
+    bearing: direction.bearing,
+    targetMeters,
+  };
+
+  els.directionText.textContent = direction.label;
   els.distanceText.textContent = approxDistanceText();
   els.promptText.textContent = buildPrompt(place);
 
@@ -131,10 +218,13 @@ function updateCue() {
     navigator.vibrate([70, 60, 120]);
     addFeed(`Hidden gem nearby: ${place.name}. Pause and look around.`, "ping");
   }
+
+  renderMap();
 }
 
 function onPosition(position) {
   state.position = position;
+
   if (!state.home) {
     state.home = {
       latitude: position.coords.latitude,
@@ -146,6 +236,8 @@ function onPosition(position) {
   if (state.running) {
     els.distanceText.textContent = approxDistanceText();
   }
+
+  renderMap();
 }
 
 function initGeolocation() {
@@ -176,19 +268,36 @@ function returnHome() {
     "Safety override active: retrace your last comfortable path toward your starting area.";
   els.distanceText.textContent = "Return Home mode: keep main roads and lit paths.";
   addFeed("Return Home override enabled.");
+
+  state.currentCue = {
+    place: { name: "Home", kind: "safe" },
+    direction: "return",
+    bearing: 315,
+    targetMeters: 90,
+  };
+  renderMap();
+}
+
+function toggleMap() {
+  state.mapVisible = !state.mapVisible;
+  els.mapWrap.classList.toggle("is-hidden", !state.mapVisible);
+  els.mapToggleBtn.textContent = state.mapVisible ? "Hide Map" : "Show Map";
 }
 
 els.startBtn.addEventListener("click", startWalk);
 els.homeBtn.addEventListener("click", returnHome);
 els.newPromptBtn.addEventListener("click", updateCue);
-els.safetyToggle.addEventListener("change", (e) => {
-  state.safetyOn = e.target.checked;
+els.mapToggleBtn.addEventListener("click", toggleMap);
+els.safetyToggle.addEventListener("change", (event) => {
+  state.safetyOn = event.target.checked;
   addFeed(state.safetyOn ? "Safety leash ON." : "Safety leash OFF (raw drift mode).");
+  renderMap();
 });
-els.serendipityToggle.addEventListener("change", (e) => {
-  state.pingOn = e.target.checked;
+els.serendipityToggle.addEventListener("change", (event) => {
+  state.pingOn = event.target.checked;
   addFeed(state.pingOn ? "Serendipity pings ON." : "Serendipity pings OFF.");
 });
 
 initGeolocation();
+renderMap();
 addFeed("Ready. Tap Start Walk.");

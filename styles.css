@@ -103,6 +103,52 @@ h1 {
   line-height: 1.42;
 }
 
+.map-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.map-toggle-btn {
+  padding: 7px 10px;
+  font-size: 0.9rem;
+}
+
+.map-wrap {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background:
+    linear-gradient(rgba(141, 112, 67, 0.05), rgba(141, 112, 67, 0.05)),
+    repeating-linear-gradient(
+      90deg,
+      rgba(105, 84, 49, 0.06),
+      rgba(105, 84, 49, 0.06) 1px,
+      transparent 1px,
+      transparent 14px
+    );
+}
+
+#drift-map {
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(110, 84, 39, 0.45);
+  border-radius: 7px;
+  background: rgba(250, 241, 220, 0.65);
+  display: block;
+}
+
+.map-note {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.is-hidden {
+  display: none;
+}
+
 .switch-row {
   display: flex;
   justify-content: space-between;
@@ -185,5 +231,10 @@ button:hover {
 
   .button-row {
     flex-direction: column;
+  }
+
+  .map-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
