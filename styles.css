@@ -1,13 +1,13 @@
 :root {
-  --bg: #0f1b1a;
-  --bg-soft: #172825;
-  --card: rgba(255, 255, 255, 0.06);
-  --text: #f4f6f5;
-  --muted: #aec2bc;
-  --accent: #f4b860;
-  --safe: #7ed6ae;
-  --border: rgba(255, 255, 255, 0.14);
-  --shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+  --paper: #efe2c6;
+  --paper-dark: #ddcda9;
+  --ink: #2d2618;
+  --muted: #6a5a3a;
+  --line: #9c8351;
+  --accent: #3f653f;
+  --accent-soft: #d9e2ce;
+  --danger: #7f3f2b;
+  --shadow: 0 12px 28px rgba(43, 33, 16, 0.18);
 }
 
 * {
@@ -17,70 +17,79 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: "Space Grotesk", sans-serif;
-  color: var(--text);
+  font-family: "Crimson Pro", serif;
+  color: var(--ink);
   background:
-    radial-gradient(circle at 15% 10%, #24514a 0%, transparent 40%),
-    radial-gradient(circle at 88% 84%, #34264a 0%, transparent 35%),
-    linear-gradient(165deg, #0a1514 0%, #142927 45%, #111d1c 100%);
-  padding: 24px;
+    radial-gradient(circle at 12% 16%, rgba(255, 255, 255, 0.35), transparent 32%),
+    radial-gradient(circle at 86% 82%, rgba(149, 122, 73, 0.2), transparent 38%),
+    linear-gradient(160deg, #d8c49a 0%, #c8b17f 45%, #bca26d 100%);
+  padding: 22px;
 }
 
 .app-shell {
   max-width: 760px;
   margin: 0 auto;
   display: grid;
-  gap: 16px;
+  gap: 14px;
 }
 
 .topbar {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 10px;
 }
 
 .eyebrow {
   margin: 0;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.11em;
   font-size: 0.72rem;
 }
 
 h1 {
-  font-family: "Fraunces", serif;
-  margin: 0;
-  font-size: clamp(2rem, 4vw, 2.6rem);
+  margin: 2px 0 0;
+  font-family: "Cinzel", serif;
+  font-size: clamp(2.1rem, 4vw, 2.8rem);
+  letter-spacing: 0.05em;
 }
 
 .card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 16px;
-  backdrop-filter: blur(8px);
+  background: linear-gradient(180deg, rgba(255, 248, 229, 0.86), rgba(241, 227, 196, 0.9));
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
   box-shadow: var(--shadow);
 }
 
 .label {
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   color: var(--muted);
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.72rem;
+  letter-spacing: 0.12em;
 }
 
 .compass-face {
-  border: 1px dashed rgba(255, 255, 255, 0.35);
-  border-radius: 14px;
-  padding: 24px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
   text-align: center;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(121, 99, 56, 0.06),
+    rgba(121, 99, 56, 0.06) 2px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0) 10px
+  );
+  padding: 22px 14px;
 }
 
 .direction {
   margin: 0;
-  font-size: clamp(1.3rem, 3vw, 1.8rem);
-  font-weight: 700;
+  font-family: "Cinzel", serif;
+  font-size: clamp(1.3rem, 2.7vw, 1.7rem);
+  text-transform: lowercase;
 }
 
 .distance {
@@ -90,22 +99,28 @@ h1 {
 
 .prompt-text {
   margin: 0;
-  font-size: clamp(1.1rem, 2.8vw, 1.45rem);
-  line-height: 1.45;
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  line-height: 1.42;
 }
 
 .switch-row {
   display: flex;
   justify-content: space-between;
+  gap: 10px;
   align-items: center;
-  gap: 12px;
   padding: 10px 0;
 }
 
 .switch-row small {
   display: block;
   color: var(--muted);
-  margin-top: 3px;
+  margin-top: 2px;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 18px;
+  height: 18px;
 }
 
 .button-row {
@@ -115,28 +130,33 @@ h1 {
 }
 
 button {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 7px;
   padding: 10px 14px;
-  border-radius: 10px;
   font-family: inherit;
+  font-size: 1rem;
   cursor: pointer;
+  color: var(--ink);
+  background: rgba(255, 248, 228, 0.85);
 }
 
 button:hover {
-  filter: brightness(1.08);
+  transform: translateY(-1px);
 }
 
 .primary-btn {
-  background: var(--accent);
-  color: #1f1200;
-  border-color: transparent;
-  font-weight: 700;
+  background: var(--accent-soft);
+  border-color: #6f8c62;
+  color: #1d311f;
+  font-weight: 600;
 }
 
 .ghost-btn {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 248, 228, 0.58);
+}
+
+#home-btn {
+  border-color: #9b6f56;
 }
 
 #feed {
@@ -147,11 +167,11 @@ button:hover {
 }
 
 #feed li {
-  color: var(--muted);
+  color: #5c4f35;
 }
 
 #feed li strong {
-  color: var(--safe);
+  color: var(--danger);
 }
 
 @media (max-width: 640px) {
@@ -160,9 +180,7 @@ button:hover {
   }
 
   .topbar {
-    align-items: flex-start;
     flex-direction: column;
-    gap: 10px;
   }
 
   .button-row {
